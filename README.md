@@ -1,6 +1,6 @@
 # Workshop performance measuring
 
-This workshop was performed on 03/12/2024 internally at World-Direct eBusiness solutions GmbH. The topic of this workshop was the measuring of an applications performance by using `BenchmarkDotnet`. All slides and codes are stored within this repository for self studying.
+This workshop was performed on 03/12/2024 internally at World-Direct eBusiness solutions GmbH. The topic of this workshop was the measuring of an applications performance primarily by using `BenchmarkDotnet`. All code is stored within this repository for self studying.
 
 ## What is performance measuring?
 
@@ -117,12 +117,227 @@ All of the following code is located within this repository. The IDE I use for t
   | Md5    | 17.14 us | 0.107 us | 0.089 us |
   ```
 
-## Boring, I want cool stuff!
+## Lame, I want cool stuff!
+
+`BenchmarkDotNet` provides more functionality to measure other parts of our example, like the memory consumption, thread usage or selecting a specific .NET version to run. In this chapter we are going deeper into these functionalities.
+
+### Memory diagnoser
+
+With the memory diagnoser `BenchmarkDotNet` can measure the allocated memory by your program. To enable this feature, you must simply put the `[MemoryDiagnoser]` attribute above your class that contains your benchmarks and run the benchmarks again.
+
+```csharp
+[MemoryDiagnoser]
+public class Md5VsSha256
+{
+    private const int N = 10000;
+    private readonly byte[] data;
+
+    private readonly SHA256 sha256 = SHA256.Create();
+    private readonly MD5 md5 = MD5.Create();
+
+    public Md5VsSha256()
+    {
+        data = new byte[N];
+        new Random(42).NextBytes(data);
+    }
+
+    [Benchmark]
+    public byte[] Sha256() => sha256.ComputeHash(data);
+
+    [Benchmark]
+    public byte[] Md5() => md5.ComputeHash(data);
+}
+```
+
+An example output looks like following:
+
+```bash
+BenchmarkDotNet v0.13.12, Windows 11 (10.0.22631.3155/23H2/2023Update/SunValley3) (Hyper-V)
+Intel Xeon Gold 6144 CPU 3.50GHz, 1 CPU, 8 logical and 4 physical cores
+.NET SDK 8.0.201
+  [Host]     : .NET 8.0.2 (8.0.224.6711), X64 RyuJIT AVX-512F+CD+BW+DQ+VL
+  DefaultJob : .NET 8.0.2 (8.0.224.6711), X64 RyuJIT AVX-512F+CD+BW+DQ+VL
 
 
+| Method | Mean     | Error    | StdDev   | Allocated |
+|------- |---------:|---------:|---------:|----------:|
+| Sha256 | 46.36 us | 0.926 us | 2.219 us |     112 B |
+| Md5    | 17.12 us | 0.117 us | 0.098 us |      80 B |
+```
+
+### Selecting different .NET versions
+
+`BenchmarkDotNet` allows you to select different .NET versions to run your benchmarks on. So you can see, how your code performs on different .NET versions. This gives you a good indicator, if your code depends on any improvements made within the .NET runtime. To enable this feature, you must simply put a `[SimpleJob()]` attribute, where you select your .NET version within the round brackets. For example, if you want to execute your benchmarks on .NET 7 and .NET 8, you put the attributes like following:
+
+```csharp
+[SimpleJob(RuntimeMoniker.NET70)]
+[SimpleJob(RuntimeMoniker.NET80)]
+public class Md5VsSha256
+{
+    private const int N = 10000;
+    private readonly byte[] data;
+
+    private readonly SHA256 sha256 = SHA256.Create();
+    private readonly MD5 md5 = MD5.Create();
+
+    public Md5VsSha256()
+    {
+        data = new byte[N];
+        new Random(42).NextBytes(data);
+    }
+
+    [Benchmark]
+    public byte[] Sha256() => sha256.ComputeHash(data);
+
+    [Benchmark]
+    public byte[] Md5() => md5.ComputeHash(data);
+}
+```
+
+```bash
+BenchmarkDotNet v0.13.12, Windows 11 (10.0.22631.3155/23H2/2023Update/SunValley3) (Hyper-V)
+Intel Xeon Gold 6144 CPU 3.50GHz, 1 CPU, 8 logical and 4 physical cores
+.NET SDK 8.0.201
+  [Host]   : .NET 8.0.2 (8.0.224.6711), X64 RyuJIT AVX-512F+CD+BW+DQ+VL
+  .NET 7.0 : .NET 7.0.16 (7.0.1624.6629), X64 RyuJIT AVX2
+  .NET 8.0 : .NET 8.0.2 (8.0.224.6711), X64 RyuJIT AVX-512F+CD+BW+DQ+VL
+
+
+| Method | Job      | Runtime  | Mean     | Error    | StdDev   |
+|------- |--------- |--------- |---------:|---------:|---------:|
+| Sha256 | .NET 7.0 | .NET 7.0 | 44.90 us | 0.793 us | 0.742 us |
+| Md5    | .NET 7.0 | .NET 7.0 | 17.23 us | 0.140 us | 0.131 us |
+| Sha256 | .NET 8.0 | .NET 8.0 | 45.76 us | 0.889 us | 1.187 us |
+| Md5    | .NET 8.0 | .NET 8.0 | 17.28 us | 0.116 us | 0.103 us |
+```
+
+### Vary benchmark parameters
+
+Until now there will be only used one fixed sized array for the benchmarks, but what if you want to see how your code performs under different situations. Let's say, you want to see, how the hash functions perform with a 100, 1000 and 10000 byte long array. To accomplish this with `BenchmarkDotNet` you can use the `Params()` attribute, which takes a params list of objects. This list represents your parameter for each different run. So for the above described example, `BenchmarkDotNet` runs 3 benchmarks:
+
+1. With an array of 100 bytes.
+2. With an array of 1000 bytes.
+3. With an array of 10000 bytes.
+
+The code must be adapted to following structure, to enable this feature:
+
+```csharp
+public class Md5VsSha256
+{
+    private byte[] data = Array.Empty<byte>();
+
+    private readonly SHA256 sha256 = SHA256.Create();
+    private readonly MD5 md5 = MD5.Create();
+    
+    [GlobalSetup]
+    public void GlobalSetup()
+    {
+        this.data = new byte[N];
+        new Random(42).NextBytes(data);
+    }
+    
+    [Params(100, 1_000, 10_000)]
+    public int N { get; set; }
+
+    [Benchmark]
+    public byte[] Sha256() => sha256.ComputeHash(data);
+
+    [Benchmark]
+    public byte[] Md5() => md5.ComputeHash(data);
+}
+```
+
+```bash
+BenchmarkDotNet v0.13.12, Windows 11 (10.0.22631.3155/23H2/2023Update/SunValley3) (Hyper-V)
+Intel Xeon Gold 6144 CPU 3.50GHz, 1 CPU, 8 logical and 4 physical cores
+.NET SDK 8.0.201
+  [Host]     : .NET 8.0.2 (8.0.224.6711), X64 RyuJIT AVX-512F+CD+BW+DQ+VL
+  DefaultJob : .NET 8.0.2 (8.0.224.6711), X64 RyuJIT AVX-512F+CD+BW+DQ+VL
+
+
+| Method | N     | Mean        | Error       | StdDev      | Median      |
+|------- |------ |------------:|------------:|------------:|------------:|
+| Sha256 | 100   |    867.9 ns |    23.16 ns |    67.18 ns |    843.8 ns |
+| Md5    | 100   |    420.8 ns |     9.07 ns |    26.32 ns |    422.0 ns |
+| Sha256 | 1000  |  5,311.0 ns |   137.80 ns |   404.15 ns |  5,292.7 ns |
+| Md5    | 1000  |  2,007.8 ns |    39.12 ns |    36.59 ns |  2,005.9 ns |
+| Sha256 | 10000 | 52,170.1 ns | 1,042.04 ns | 3,023.16 ns | 51,988.0 ns |
+| Md5    | 10000 | 17,759.0 ns |   342.58 ns |   336.46 ns | 17,678.2 ns |
+```
+
+### Exporters
+
+So we have accomplished a lot with `BenchmarkDotNet`, but the result table printed at the console is not so satisfying isn't it? What if you want a more graphical representation of the results or a CSV-formatted file, which you can import into another tools like Excel or so? For this `BenchmarkDotNet` has also many attributes to offer. For example, if you want to export your measurements to a CSV file, place the `[CsvMeasurementsExporter]` attribute on your class that contains the benchmarks. There is also the option to print it as a graph by using RPlot, which requires the programming language `R`[^11], by using the `[RPlotExporter]` attribute. The following picture was copied from `BenchmarkDotNet`'s website[^12].
+
+![Plots plotted by BenchmarkDotNet's RPlotExporter](/assets/images/RPlot_example.png)
+
+```csharp
+[CsvMeasurementsExporter]
+public class Md5VsSha256
+{
+    private byte[] data = Array.Empty<byte>();
+
+    private readonly SHA256 sha256 = SHA256.Create();
+    private readonly MD5 md5 = MD5.Create();
+    
+    [GlobalSetup]
+    public void GlobalSetup()
+    {
+        this.data = new byte[N];
+        new Random(42).NextBytes(data);
+    }
+    
+    [Params(100, 1_000, 10_000)]
+    public int N { get; set; }
+
+    [Benchmark]
+    public byte[] Sha256() => sha256.ComputeHash(data);
+
+    [Benchmark]
+    public byte[] Md5() => md5.ComputeHash(data);
+}
+```
+
+The following code uses all above described features at the same time:
+
+```csharp
+[MemoryDiagnoser]
+[SimpleJob(RuntimeMoniker.Net70)]
+[SimpleJob(RuntimeMoniker.Net80)]
+[CsvMeasurementsExporter]
+public class Md5VsSha256
+{
+    private byte[] data = Array.Empty<byte>();
+
+    private readonly SHA256 sha256 = SHA256.Create();
+    private readonly MD5 md5 = MD5.Create();
+    
+    [GlobalSetup]
+    public void GlobalSetup()
+    {
+        this.data = new byte[N];
+        new Random(42).NextBytes(data);
+    }
+    
+    [Params(100, 1_000, 10_000)]
+    public int N { get; set; }
+
+    [Benchmark]
+    public byte[] Sha256() => sha256.ComputeHash(data);
+
+    [Benchmark]
+    public byte[] Md5() => md5.ComputeHash(data);
+}
+```
+
+## Further reading
+
+If you are hooked with `BenchmarkDotNet` and benchmarking itself, there is a book[^13] from the author of `BenchmarkDotNet`, which describes the most common pitfalls with benchmarking and improvements for your software.
+
+There are also other benchmarking tools for other scenarios like load-testing or stress-testing, such as `NBomber`[^14] or Grafana Lab's `k6`[^15]. These tools measures the responsiveness and durability of your web-based APIs.
 
 [^1]: [Wikipedia article of performance measuring (accessed on 03/11/2024)](https://en.wikipedia.org/wiki/Performance_measurement)
-[^2]: [Wikipedia article pf (key) performance indicators (accessed on 03/11/2024)](https://en.wikipedia.org/wiki/Performance_indicator)
+[^2]: [Wikipedia article of (key) performance indicators (accessed on 03/11/2024)](https://en.wikipedia.org/wiki/Performance_indicator)
 [^3]: [Visual Studio performance profiler (accessed on 03/11/2024)](https://learn.microsoft.com/en-us/visualstudio/profiling/profiling-feature-tour?view=vs-2022)
 [^4]: [Rider performance profiler (accessed on 03/11/2024)](https://www.jetbrains.com/help/rider/Performance_Profiling.html)
 [^5]: [BenchmarkDotnets .NET Foundation homepage (accessed on 03/11/2024)](https://dotnetfoundation.org/projects/project-detail/benchmarkdotnet)
@@ -131,3 +346,8 @@ All of the following code is located within this repository. The IDE I use for t
 [^8]: [Benchmark example from BenchmarkDotnet documentation (accessed on 03/11/2014)](https://benchmarkdotnet.org/articles/guides/getting-started.html#step-3-design-a-benchmark)
 [^9]: [Switch to Release mode in Rider (accessed on 03/11/2024)](https://www.jetbrains.com/help/rider/Build_Configurations.html)
 [^10]: [Switch to Release mode in Visual Studio (accessed on 03/11/2024)](https://learn.microsoft.com/en-us/visualstudio/debugger/how-to-set-debug-and-release-configurations?view=vs-2022)
+[^11]: [Wikipedia article of R programming language (accessed on 03/11/2024)](https://en.wikipedia.org/wiki/R_(programming_language))
+[^12]: [BenchmarkDotNet's example for plots](https://raw.githubusercontent.com/dotnet/BenchmarkDotNet/ec962b0bd6854c991d7a3ebd77037579165acb36/docs/images/v0.12.0/rplot.png)
+[^13]: [Pro .NET Benchmarking: The Art of Performance Measurement on amazon.de](https://www.amazon.de/dp/1484249402/)
+[^14]: [Website of NBomber (accessed on 03/11/2024)](https://nbomber.com/)
+[^15]: [Website of k6 (accessed on 03/11/2024)](https://k6.io/)
