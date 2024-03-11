@@ -691,3 +691,18 @@ fabric.properties
 # Additional files built by Visual Studio
 
 # End of https://www.toptal.com/developers/gitignore/api/dotnetcore,jetbrains+all,visualstudio,visualstudiocode,csharp
+src/Workshop.PerformanceMeasuring/.idea/.idea.Workshop.PerformanceMeasuring/.idea/encodings.xml
+src/Workshop.PerformanceMeasuring/.idea/.idea.Workshop.PerformanceMeasuring/.idea/indexLayout.xml
+src/Workshop.PerformanceMeasuring/.idea/.idea.Workshop.PerformanceMeasuring/.idea/projectSettingsUpdater.xml
+src/Workshop.PerformanceMeasuring/.idea/.idea.Workshop.PerformanceMeasuring/.idea/vcs.xml
+src/Workshop.PerformanceMeasuring/.idea/.idea.Workshop.PerformanceMeasuring/.idea/workspace.xml
+src/Workshop.PerformanceMeasuring/.idea/.idea.Workshop.PerformanceMeasuring/.idea/sonarlint/issuestore/index.pb
+src/Workshop.PerformanceMeasuring/.idea/.idea.Workshop.PerformanceMeasuring/.idea/sonarlint/issuestore/5/7/574354ae56188ea6a5e75239435596f09746de9d
+src/Workshop.PerformanceMeasuring/.idea/.idea.Workshop.PerformanceMeasuring/.idea/sonarlint/issuestore/8/d/8da6fef79e2c151a7c77db7b47656a2f228a77f9
+src/Workshop.PerformanceMeasuring/.idea/.idea.Workshop.PerformanceMeasuring/.idea/sonarlint/issuestore/9/d/9d0e8b5faf269894a591185f59b3774138c878b9
+src/Workshop.PerformanceMeasuring/.idea/.idea.Workshop.PerformanceMeasuring/.idea/sonarlint/issuestore/e/4/e4090f10cb6f5c8cb0c2ee7469b91d17a51364b6
+src/Workshop.PerformanceMeasuring/.idea/.idea.Workshop.PerformanceMeasuring/.idea/sonarlint/securityhotspotstore/index.pb
+src/Workshop.PerformanceMeasuring/.idea/.idea.Workshop.PerformanceMeasuring/.idea/sonarlint/securityhotspotstore/5/7/574354ae56188ea6a5e75239435596f09746de9d
+src/Workshop.PerformanceMeasuring/.idea/.idea.Workshop.PerformanceMeasuring/.idea/sonarlint/securityhotspotstore/8/d/8da6fef79e2c151a7c77db7b47656a2f228a77f9
+src/Workshop.PerformanceMeasuring/.idea/.idea.Workshop.PerformanceMeasuring/.idea/sonarlint/securityhotspotstore/9/d/9d0e8b5faf269894a591185f59b3774138c878b9
+src/Workshop.PerformanceMeasuring/.idea/.idea.Workshop.PerformanceMeasuring/.idea/sonarlint/securityhotspotstore/e/4/e4090f10cb6f5c8cb0c2ee7469b91d17a51364b6
